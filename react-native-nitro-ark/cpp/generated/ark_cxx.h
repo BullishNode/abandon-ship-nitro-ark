@@ -1731,6 +1731,8 @@ void unlock_vtxos(::rust::Vec<::rust::String> vtxo_ids);
 
 ::bark_cxx::Bolt11Invoice bolt11_invoice(::std::uint64_t amount_sat, ::rust::String const *description, ::rust::String const *token);
 
+::bark_cxx::Bolt11Invoice bolt11_invoice_with_description_hash(::std::uint64_t amount_sat, ::rust::Str description_hash, ::rust::String const *token);
+
 ::bark_cxx::LightningReceive lightning_receive_status(::rust::String payment_hash);
 
 ::bark_cxx::LightningPaymentResult check_lightning_payment(::rust::String payment_hash, bool wait);

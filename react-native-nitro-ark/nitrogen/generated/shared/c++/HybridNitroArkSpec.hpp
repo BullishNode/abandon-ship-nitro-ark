@@ -240,6 +240,7 @@ namespace margelo::nitro::nitroark {
       virtual std::shared_ptr<Promise<std::string>> sendOnchain(const std::string& destination, double amountSat) = 0;
       virtual std::shared_ptr<Promise<BarkFeeEstimate>> estimateSendOnchain(const std::string& destination, double amountSat) = 0;
       virtual std::shared_ptr<Promise<Bolt11Invoice>> bolt11Invoice(double amountSat, const std::optional<std::string>& description, const std::optional<std::string>& token) = 0;
+      virtual std::shared_ptr<Promise<Bolt11Invoice>> bolt11InvoiceWithDescriptionHash(double amountSat, const std::string& descriptionHash, const std::optional<std::string>& token) = 0;
       virtual std::shared_ptr<Promise<LightningReceive>> lightningReceiveStatus(const std::string& paymentHash) = 0;
       virtual std::shared_ptr<Promise<LightningPaymentResult>> checkLightningPayment(const std::string& paymentHash, bool wait) = 0;
       virtual std::shared_ptr<Promise<LightningReceive>> tryClaimLightningReceive(const std::string& paymentHash, bool wait) = 0;
