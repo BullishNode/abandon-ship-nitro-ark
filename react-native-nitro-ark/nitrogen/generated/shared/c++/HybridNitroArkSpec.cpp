@@ -48,6 +48,7 @@ namespace margelo::nitro::nitroark {
       prototype.registerHybridMethod("syncPendingRounds", &HybridNitroArkSpec::syncPendingRounds);
       prototype.registerHybridMethod("getArkInfo", &HybridNitroArkSpec::getArkInfo);
       prototype.registerHybridMethod("debugInfo", &HybridNitroArkSpec::debugInfo);
+      prototype.registerHybridMethod("perKeyProof", &HybridNitroArkSpec::perKeyProof);
       prototype.registerHybridMethod("offchainBalance", &HybridNitroArkSpec::offchainBalance);
       prototype.registerHybridMethod("deriveStoreNextKeypair", &HybridNitroArkSpec::deriveStoreNextKeypair);
       prototype.registerHybridMethod("peekKeyPair", &HybridNitroArkSpec::peekKeyPair);

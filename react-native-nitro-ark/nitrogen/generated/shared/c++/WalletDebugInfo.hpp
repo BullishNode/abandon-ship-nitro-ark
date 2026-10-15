@@ -41,11 +41,11 @@ namespace margelo::nitro::nitroark {
   public:
     std::string network     SWIFT_PRIVATE;
     std::string mailbox_id     SWIFT_PRIVATE;
-    std::string vtxo_xpub     SWIFT_PRIVATE;
+    std::string sdk_source     SWIFT_PRIVATE;
 
   public:
     WalletDebugInfo() = default;
-    explicit WalletDebugInfo(std::string network, std::string mailbox_id, std::string vtxo_xpub): network(network), mailbox_id(mailbox_id), vtxo_xpub(vtxo_xpub) {}
+    explicit WalletDebugInfo(std::string network, std::string mailbox_id, std::string sdk_source): network(network), mailbox_id(mailbox_id), sdk_source(sdk_source) {}
 
   public:
     friend bool operator==(const WalletDebugInfo& lhs, const WalletDebugInfo& rhs) = default;
@@ -63,14 +63,14 @@ namespace margelo::nitro {
       return margelo::nitro::nitroark::WalletDebugInfo(
         JSIConverter<std::string>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "network"))),
         JSIConverter<std::string>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "mailbox_id"))),
-        JSIConverter<std::string>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "vtxo_xpub")))
+        JSIConverter<std::string>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "sdk_source")))
       );
     }
     static inline jsi::Value toJSI(jsi::Runtime& runtime, const margelo::nitro::nitroark::WalletDebugInfo& arg) {
       jsi::Object obj(runtime);
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "network"), JSIConverter<std::string>::toJSI(runtime, arg.network));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "mailbox_id"), JSIConverter<std::string>::toJSI(runtime, arg.mailbox_id));
-      obj.setProperty(runtime, PropNameIDCache::get(runtime, "vtxo_xpub"), JSIConverter<std::string>::toJSI(runtime, arg.vtxo_xpub));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "sdk_source"), JSIConverter<std::string>::toJSI(runtime, arg.sdk_source));
       return obj;
     }
     static inline bool canConvert(jsi::Runtime& runtime, const jsi::Value& value) {
@@ -83,7 +83,7 @@ namespace margelo::nitro {
       }
       if (!JSIConverter<std::string>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "network")))) return false;
       if (!JSIConverter<std::string>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "mailbox_id")))) return false;
-      if (!JSIConverter<std::string>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "vtxo_xpub")))) return false;
+      if (!JSIConverter<std::string>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "sdk_source")))) return false;
       return true;
     }
   };

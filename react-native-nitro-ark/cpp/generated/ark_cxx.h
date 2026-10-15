@@ -1341,7 +1341,7 @@ struct CxxArkInfo final {
 struct WalletDebugInfo final {
   ::rust::String network;
   ::rust::String mailbox_id;
-  ::rust::String vtxo_xpub;
+  ::rust::String sdk_source;
 
   using IsRelocatable = ::std::true_type;
 };
@@ -1686,6 +1686,8 @@ void close_wallet();
 ::bark_cxx::CxxArkInfo get_ark_info();
 
 ::bark_cxx::WalletDebugInfo debug_info();
+
+::rust::String per_key_proof(::std::uint32_t index);
 
 ::bark_cxx::OffchainBalance offchain_balance();
 

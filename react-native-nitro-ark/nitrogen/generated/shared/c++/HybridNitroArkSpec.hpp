@@ -188,6 +188,7 @@ namespace margelo::nitro::nitroark {
       virtual std::shared_ptr<Promise<std::vector<PendingRoundStatus>>> syncPendingRounds() = 0;
       virtual std::shared_ptr<Promise<BarkArkInfo>> getArkInfo() = 0;
       virtual std::shared_ptr<Promise<WalletDebugInfo>> debugInfo() = 0;
+      virtual std::shared_ptr<Promise<std::string>> perKeyProof(double index) = 0;
       virtual std::shared_ptr<Promise<OffchainBalanceResult>> offchainBalance() = 0;
       virtual std::shared_ptr<Promise<KeyPairResult>> deriveStoreNextKeypair() = 0;
       virtual std::shared_ptr<Promise<KeyPairResult>> peekKeyPair(double index) = 0;
