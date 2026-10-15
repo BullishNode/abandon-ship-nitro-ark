@@ -1101,7 +1101,7 @@ pub(crate) fn create_wallet(datadir: &str, opts: ffi::CreateOpts) -> anyhow::Res
     ffi_boundary("create_wallet", || {
         let create_opts = utils::ffi_config_to_config(opts)?;
 
-        log::info!("Creating wallet with options: {:?}", create_opts);
+        log::info!("Creating wallet");
 
         crate::TOKIO_RUNTIME.block_on(crate::create_wallet(Path::new(datadir), create_opts))
     })

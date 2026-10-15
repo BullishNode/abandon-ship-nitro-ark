@@ -14,7 +14,7 @@ use bark::{
     lnurllib::lightning_address::LightningAddress,
     lock_manager::memory::MemoryLockManager,
     movement::{Movement, PaymentMethod},
-    onchain::OnchainWallet,
+    onchain::{OnchainWallet, OnchainWalletTrait},
     persist::sqlite::SqliteClient,
     round::RoundStatus,
     vtxo::VtxoState,
@@ -22,7 +22,7 @@ use bark::{
 
 use bitcoin_ext::FeeRateExt;
 use logger::log::{debug, error, info};
-use tokio::fs;
+use tokio::{fs, sync::RwLock};
 use tonic::transport::Uri;
 
 use crate::cxx::ffi;
@@ -242,7 +242,7 @@ pub enum RefreshMode {
     Specific(Vec<VtxoId>),
 }
 
-/// In this method we create the wallet and if it fails, the datadir will be wiped again.
+/// Create a wallet, retaining its database if creation fails.
 pub(crate) async fn try_create_wallet(
     datadir: &Path,
     net: Network,
@@ -257,7 +257,6 @@ pub(crate) async fn try_create_wallet(
 
     debug!("try_create_wallet datadir {:?} ", datadir);
     debug!("try_create_walletnetwork {:?}", net);
-    debug!("try_create_wallet config {:?}", config);
 
     // Check whether chain source (Esplora etc) is operational and valid
     check_chain_source(&config, net).await?;
@@ -275,13 +274,24 @@ pub(crate) async fn try_create_wallet(
     );
 
     debug!("Loading or creating onchain wallet");
-    OnchainWallet::load_or_create(net, seed, db.clone())
-        .await
-        .context("failed to load or create onchain wallet")?;
+    let onchain: Arc<RwLock<dyn OnchainWalletTrait>> = Arc::new(RwLock::new(
+        OnchainWallet::load_or_create(net, seed, db.clone())
+            .await
+            .context("failed to load or create onchain wallet")?,
+    ));
     let lock_manager = Box::new(MemoryLockManager::new());
     debug!("Creating bark wallet with exit support");
     let wallet_seed = WalletSeed::new_from_mnemonic(net, &mnemonic);
-    match BarkWallet::create(net, &wallet_seed, &config, &*db, &*lock_manager, false)
+    match BarkWallet::create(
+        net,
+        &wallet_seed,
+        &config,
+        &*db,
+        &*lock_manager,
+        false,
+        &onchain,
+        None,
+    )
         .await
         .context("error creating wallet")
     {
