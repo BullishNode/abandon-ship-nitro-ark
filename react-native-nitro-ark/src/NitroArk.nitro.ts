@@ -581,6 +581,11 @@ export interface NitroArk extends HybridObject<{ ios: 'c++'; android: 'c++' }> {
     description?: string,
     token?: string
   ): Promise<Bolt11Invoice>;
+  bolt11InvoiceWithDescriptionHash(
+    amountSat: number,
+    descriptionHash: string,
+    token?: string
+  ): Promise<Bolt11Invoice>;
   lightningReceiveStatus(paymentHash: string): Promise<LightningReceive>;
   checkLightningPayment(
     paymentHash: string,

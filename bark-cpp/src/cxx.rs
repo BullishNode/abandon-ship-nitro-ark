@@ -487,6 +487,11 @@ pub(crate) mod ffi {
             description: *const String,
             token: *const String,
         ) -> Result<Bolt11Invoice>;
+        unsafe fn bolt11_invoice_with_description_hash(
+            amount_sat: u64,
+            description_hash: &str,
+            token: *const String,
+        ) -> Result<Bolt11Invoice>;
         fn lightning_receive_status(payment_hash: String) -> Result<LightningReceive>;
         fn check_lightning_payment(
             payment_hash: String,
@@ -1025,6 +1030,24 @@ pub(crate) fn bolt11_invoice(
             amount_sat,
             description_opt,
             token_opt,
+        ))?;
+        Ok(ffi::Bolt11Invoice {
+            bolt11_invoice: invoice.to_string(),
+            payment_secret: invoice.payment_secret().to_string(),
+            payment_hash: invoice.payment_hash().to_string(),
+        })
+    })
+}
+
+pub(crate) fn bolt11_invoice_with_description_hash(
+    amount_sat: u64,
+    description_hash: &str,
+    token: *const String,
+) -> anyhow::Result<ffi::Bolt11Invoice> {
+    ffi_boundary("bolt11_invoice_with_description_hash", || {
+        let token = unsafe { token.as_ref().cloned() };
+        let invoice = crate::TOKIO_RUNTIME.block_on(crate::bolt11_invoice_with_description_hash(
+            amount_sat, description_hash, token,
         ))?;
         Ok(ffi::Bolt11Invoice {
             bolt11_invoice: invoice.to_string(),

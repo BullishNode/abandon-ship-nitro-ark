@@ -1679,6 +1679,28 @@ public:
     });
   }
 
+  std::shared_ptr<Promise<Bolt11Invoice>> bolt11InvoiceWithDescriptionHash(
+      double amountSat, const std::string& descriptionHash,
+      const std::optional<std::string>& token) override {
+    return Promise<Bolt11Invoice>::async([amountSat, descriptionHash, token]() {
+      if (!std::isfinite(amountSat) || std::floor(amountSat) != amountSat ||
+          amountSat <= 0 || amountSat > 9007199254740991.0) {
+        throw std::invalid_argument("Invoice amount must be a positive safe integer in satoshis");
+      }
+      try {
+        std::unique_ptr<rust::String> token_rs;
+        if (token.has_value()) token_rs = std::make_unique<rust::String>(token.value());
+        const auto invoice_rs = bark_cxx::bolt11_invoice_with_description_hash(
+            static_cast<uint64_t>(amountSat), rust::Str(descriptionHash), token_rs.get());
+        return Bolt11Invoice(std::string(invoice_rs.bolt11_invoice.data(), invoice_rs.bolt11_invoice.length()),
+                             std::string(invoice_rs.payment_secret.data(), invoice_rs.payment_secret.length()),
+                             std::string(invoice_rs.payment_hash.data(), invoice_rs.payment_hash.length()));
+      } catch (const rust::Error& e) {
+        throw std::runtime_error(e.what());
+      }
+    });
+  }
+
   std::shared_ptr<Promise<LightningReceive>>
   tryClaimLightningReceive(const std::string& paymentHash, bool wait) override {
     return Promise<LightningReceive>::async([paymentHash, wait]() -> LightningReceive {
