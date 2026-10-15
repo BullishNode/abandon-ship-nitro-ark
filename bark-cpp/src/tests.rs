@@ -1071,3 +1071,43 @@ fn test_claim_bolt11_payment_ffi() {
     // The key is that it shouldn't panic.
     assert!(claim_res.is_err(), "Claiming an unpaid invoice should fail");
 }
+
+#[test]
+fn description_hash_invoice_preserves_exact_public_digest() {
+    use sha2::{Digest, Sha256};
+    let metadata = r#"[["text/identifier","alice@example.invalid"],["text/plain","Paying satoshis to alice@example.invalid"]]"#;
+    let expected = "9d041fb4729e3c19c8716cc6f6143a02ba93dcedfba07e9bf197c2b3dea0b595";
+    assert_eq!(hex::encode(Sha256::digest(metadata.as_bytes())), expected);
+    assert_eq!(crate::parse_invoice_description_hash(1000, expected).unwrap().to_string(), expected);
+    assert_eq!(crate::parse_invoice_description_hash(1, &expected.to_uppercase()).unwrap().to_string(), expected);
+    let changed = metadata.replace("alice", "bob");
+    assert_ne!(hex::encode(Sha256::digest(changed.as_bytes())), expected);
+}
+
+#[test]
+fn description_hash_invoice_rejects_invalid_before_wallet_access() {
+    let valid = "00".repeat(32);
+    for amount in [0, 9_007_199_254_740_992, u64::MAX] {
+        let error = crate::TOKIO_RUNTIME.block_on(
+            crate::bolt11_invoice_with_description_hash(amount, &valid, None),
+        ).unwrap_err();
+        assert!(error.to_string().contains("positive safe integer"));
+    }
+    for hash in [String::new(), "00".repeat(31), "00".repeat(33), "gg".repeat(32), format!(" {}", "00".repeat(32))] {
+        let error = crate::TOKIO_RUNTIME.block_on(
+            crate::bolt11_invoice_with_description_hash(1, &hash, None),
+        ).unwrap_err();
+        assert!(error.to_string().contains("exactly 32 bytes"));
+        assert!(!error.to_string().contains("Wallet not loaded"));
+    }
+}
+
+#[test]
+fn description_hash_invoice_ffi_refuses_invalid_before_wallet_access() {
+    let result = cxx::bolt11_invoice_with_description_hash(1, "invalid", std::ptr::null());
+    let error = match result { Ok(_) => panic!("invalid hash entered wallet"), Err(error) => error };
+    let message = crate::utils::format_error_chain(&error);
+    assert!(message.contains("exactly 32 bytes"));
+    assert!(!message.contains("Wallet not loaded"));
+}
+

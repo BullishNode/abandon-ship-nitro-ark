@@ -378,6 +378,27 @@ JNIEXPORT jobject JNICALL Java_com_margelo_nitro_nitroark_NitroArkNative_bolt11I
   }
 }
 
+JNIEXPORT jobject JNICALL Java_com_margelo_nitro_nitroark_NitroArkNative_bolt11InvoiceWithDescriptionHashNative(
+    JNIEnv* env, jobject /*thiz*/, jlong jAmountSat, jstring jDescriptionHash, jstring jToken) {
+  try {
+    if (jAmountSat <= 0 || jAmountSat > 9007199254740991LL || jDescriptionHash == nullptr) {
+      throw std::invalid_argument("Invalid hashed-description invoice arguments");
+    }
+    const auto description_hash = JStringToString(env, jDescriptionHash);
+    std::unique_ptr<rust::String> token;
+    if (jToken != nullptr) token = std::make_unique<rust::String>(JStringToString(env, jToken));
+    const auto invoice = bark_cxx::bolt11_invoice_with_description_hash(
+        static_cast<uint64_t>(jAmountSat), rust::Str(description_hash), token.get());
+    return MakeBolt11Invoice(env, invoice);
+  } catch (const std::exception& e) {
+    HandleException(env, e);
+    return nullptr;
+  } catch (...) {
+    HandleUnknownException(env);
+    return nullptr;
+  }
+}
+
 JNIEXPORT jstring JNICALL Java_com_margelo_nitro_nitroark_NitroArkNative_signMessage(JNIEnv* env, jobject /*thiz*/,
                                                                                      jstring jMessage, jint jIndex) {
   try {

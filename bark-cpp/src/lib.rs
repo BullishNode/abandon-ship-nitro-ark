@@ -625,6 +625,43 @@ pub async fn bolt11_invoice(
         .await
 }
 
+pub(crate) fn parse_invoice_description_hash(
+    amount_sat: u64,
+    description_hash: &str,
+) -> anyhow::Result<bark::ark::bitcoin::hashes::sha256::Hash> {
+    anyhow::ensure!(
+        amount_sat > 0 && amount_sat <= 9_007_199_254_740_991,
+        "invoice amount must be a positive safe integer in satoshis"
+    );
+    anyhow::ensure!(
+        description_hash.len() == 64 && description_hash.bytes().all(|b| b.is_ascii_hexdigit()),
+        "description hash must be exactly 32 bytes of hexadecimal"
+    );
+    bark::ark::bitcoin::hashes::sha256::Hash::from_str(description_hash)
+        .context("invalid invoice description hash")
+}
+
+/// Create a hashed-description invoice without changing ordinary memo invoices.
+/// Validate before touching the loaded wallet or issuing a request.
+pub async fn bolt11_invoice_with_description_hash(
+    amount_sat: u64,
+    description_hash: &str,
+    token: Option<String>,
+) -> anyhow::Result<Bolt11Invoice> {
+    let description_hash = parse_invoice_description_hash(amount_sat, description_hash)?;
+    let mut manager = GLOBAL_WALLET_MANAGER.lock().await;
+    manager
+        .with_context_async(|ctx| async move {
+            ctx.wallet
+                .bolt11_invoice_with_description_hash(
+                    Amount::from_sat(amount_sat), description_hash, token,
+                )
+                .await
+                .context("Failed to create hashed-description invoice")
+        })
+        .await
+}
+
 pub async fn lightning_receive_status(payment: PaymentHash) -> anyhow::Result<LightningReceive> {
     let mut manager = GLOBAL_WALLET_MANAGER.lock().await;
     manager

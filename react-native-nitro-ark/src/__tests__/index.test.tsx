@@ -36,6 +36,8 @@ jest.mock('react-native-nitro-modules', () => {
         progressExits,
         estimateEmergencyExitFee,
         updateHistoryMetadata,
+        bolt11Invoice: jest.fn(() => Promise.resolve({ payment_request: 'fixture-memo' })),
+        bolt11InvoiceWithDescriptionHash: jest.fn(() => Promise.resolve({ payment_request: 'fixture-hash' })),
         payLightningInvoice,
         payLightningOffer,
         payLightningAddress,
@@ -75,6 +77,8 @@ import {
   payLightningAddress,
   payLightningInvoiceWithOrigin,
   updateHistoryMetadata,
+  bolt11Invoice,
+  bolt11InvoiceWithDescriptionHash,
 } from '../index';
 
 describe('cancelExit', () => {
@@ -305,4 +309,40 @@ describe.each([
       }
     }
   );
+});
+
+
+describe('description hash invoice boundary', () => {
+  const hash = '9d041fb4729e3c19c8716cc6f6143a02ba93dcedfba07e9bf197c2b3dea0b595';
+  beforeEach(() => { jest.clearAllMocks(); });
+
+  it('passes exact hash and token to the dedicated native method', async () => {
+    await bolt11InvoiceWithDescriptionHash(1000, hash, 'public-fixture-token');
+    expect(NitroArkHybridObject.bolt11InvoiceWithDescriptionHash)
+      .toHaveBeenCalledWith(1000, hash, 'public-fixture-token');
+    expect(NitroArkHybridObject.bolt11Invoice).not.toHaveBeenCalled();
+  });
+
+  it.each([0, -1, 0.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 1])(
+    'rejects unsafe amount %p before a native call', async (amount) => {
+      await expect(bolt11InvoiceWithDescriptionHash(amount, hash)).rejects.toThrow('positive safe integer');
+      expect(NitroArkHybridObject.bolt11InvoiceWithDescriptionHash).not.toHaveBeenCalled();
+      expect(NitroArkHybridObject.bolt11Invoice).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each(['', '00'.repeat(31), '00'.repeat(33), 'gg'.repeat(32), ` ${hash}`])(
+    'rejects malformed hash before a native call', async (invalid) => {
+      await expect(bolt11InvoiceWithDescriptionHash(1, invalid)).rejects.toThrow('exactly 32 bytes');
+      expect(NitroArkHybridObject.bolt11InvoiceWithDescriptionHash).not.toHaveBeenCalled();
+      expect(NitroArkHybridObject.bolt11Invoice).not.toHaveBeenCalled();
+    }
+  );
+
+  it('leaves the ordinary memo API on the existing native route', async () => {
+    await bolt11Invoice(1000, 'ordinary public memo', 'public-fixture-token');
+    expect(NitroArkHybridObject.bolt11Invoice)
+      .toHaveBeenCalledWith(1000, 'ordinary public memo', 'public-fixture-token');
+    expect(NitroArkHybridObject.bolt11InvoiceWithDescriptionHash).not.toHaveBeenCalled();
+  });
 });

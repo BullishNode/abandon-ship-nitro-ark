@@ -1058,6 +1058,21 @@ export function bolt11Invoice(
   return NitroArkHybridObject.bolt11Invoice(amountSat, description, token);
 }
 
+/** Creates an invoice committing to an exact SHA-256 description hash. */
+export async function bolt11InvoiceWithDescriptionHash(
+  amountSat: number,
+  descriptionHash: string,
+  token?: string
+): Promise<Bolt11Invoice> {
+  if (!Number.isSafeInteger(amountSat) || amountSat <= 0) {
+    throw new Error('Invoice amount must be a positive safe integer in satoshis');
+  }
+  if (typeof descriptionHash !== 'string' || !/^[0-9a-fA-F]{64}$/.test(descriptionHash)) {
+    throw new Error('Description hash must be exactly 32 bytes of hexadecimal');
+  }
+  return NitroArkHybridObject.bolt11InvoiceWithDescriptionHash(amountSat, descriptionHash, token);
+}
+
 /**
  * Gets the status of a Lightning receive.
  * @param paymentHash The payment hash of the Lightning receive.
