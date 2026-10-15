@@ -197,9 +197,9 @@ fi
 cp "$X86_64_CXX_LIB_PATH" "$OUTPUT_DIR/x86_64/"
 
 # --- Copy binaries to React Native project ---
-DEST_JNI_DIR_ARM64="../../react-native-nitro-ark/react-native-nitro-ark/android/src/main/jniLibs/arm64-v8a"
-DEST_JNI_DIR_ARMV7="../../react-native-nitro-ark/react-native-nitro-ark/android/src/main/jniLibs/armeabi-v7a"
-DEST_JNI_DIR_X86_64="../../react-native-nitro-ark/react-native-nitro-ark/android/src/main/jniLibs/x86_64"
+DEST_JNI_DIR_ARM64="../react-native-nitro-ark/android/src/main/jniLibs/arm64-v8a"
+DEST_JNI_DIR_ARMV7="../react-native-nitro-ark/android/src/main/jniLibs/armeabi-v7a"
+DEST_JNI_DIR_X86_64="../react-native-nitro-ark/android/src/main/jniLibs/x86_64"
 
 mkdir -p "$DEST_JNI_DIR_ARM64"
 mkdir -p "$DEST_JNI_DIR_ARMV7"
