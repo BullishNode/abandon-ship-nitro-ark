@@ -105,6 +105,26 @@ object NitroArkNative {
       description: String?,
       token: String?
   ): Bolt11InvoiceResult
+  fun bolt11InvoiceWithDescriptionHash(
+      amountSat: Long,
+      descriptionHash: String,
+      token: String?
+  ): Bolt11InvoiceResult {
+    require(amountSat > 0 && amountSat <= 9007199254740991L) {
+      "Invoice amount must be a positive safe integer in satoshis"
+    }
+    require(Regex("^[0-9a-fA-F]{64}$").matches(descriptionHash)) {
+      "Description hash must be exactly 32 bytes of hexadecimal"
+    }
+    return bolt11InvoiceWithDescriptionHashNative(amountSat, descriptionHash, token)
+  }
+
+  private external fun bolt11InvoiceWithDescriptionHashNative(
+      amountSat: Long,
+      descriptionHash: String,
+      token: String?
+  ): Bolt11InvoiceResult
+
   external fun signMessage(message: String, index: Int): String
   external fun sync()
 }
