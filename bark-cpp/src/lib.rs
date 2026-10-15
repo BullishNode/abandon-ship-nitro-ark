@@ -354,9 +354,9 @@ impl WalletManager {
         }
     }
 
-    pub async fn with_context_ref_async<T, F, Fut>(&self, f: F) -> anyhow::Result<T>
+    pub async fn with_context_ref_async<'a, T, F, Fut>(&'a self, f: F) -> anyhow::Result<T>
     where
-        F: FnOnce(&WalletContext) -> Fut,
+        F: FnOnce(&'a WalletContext) -> Fut,
         Fut: std::future::Future<Output = anyhow::Result<T>>,
     {
         match &self.context {
