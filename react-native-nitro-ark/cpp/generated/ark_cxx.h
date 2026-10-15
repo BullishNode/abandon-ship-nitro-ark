@@ -76,8 +76,6 @@ public:
   explicit operator std::string() const;
 
   const char *data() const noexcept;
-  char *data() noexcept;
-
   std::size_t size() const noexcept;
   std::size_t length() const noexcept;
   bool empty() const noexcept;
@@ -277,6 +275,11 @@ private:
   void *pos;
   std::size_t stride;
 };
+
+#if __cplusplus >= 202002L
+static_assert(std::ranges::contiguous_range<rust::Slice<const uint8_t>>);
+static_assert(std::contiguous_iterator<rust::Slice<const uint8_t>::iterator>);
+#endif
 
 template <typename T>
 Slice<T>::Slice() noexcept {
@@ -744,6 +747,11 @@ Vec<T> &Vec<T>::operator=(const Vec &other) & {
 template <typename T>
 bool Vec<T>::empty() const noexcept {
   return this->size() == 0;
+}
+
+template <typename T>
+T *Vec<T>::data() noexcept {
+  return const_cast<T *>(const_cast<const Vec<T> *>(this)->data());
 }
 
 template <typename T>
