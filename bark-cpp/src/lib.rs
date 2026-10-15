@@ -496,6 +496,8 @@ pub async fn per_key_proof(index: u32) -> anyhow::Result<String> {
         let link = ctx.wallet.fallback_key_link(key).await?;
         link.verify(network, mailbox, &record)?;
         anyhow::ensure!(link.user_pubkey == key, "retained link belongs to another key");
+        anyhow::ensure!(link.recovery_index.is_none_or(|hint| hint == index),
+            "retained recovery index differs from native key index");
         let server = ctx.wallet.require_ark_info().await?;
         anyhow::ensure!(server.network == network, "native server network differs");
         Ok(serde_json::to_string(&serde_json::json!({
