@@ -292,8 +292,8 @@ pub(crate) async fn try_create_wallet(
         &onchain,
         None,
     )
-        .await
-        .context("error creating wallet")
+    .await
+    .context("error creating wallet")
     {
         Ok(_) => {
             info!("Created bark wallet successfully");
