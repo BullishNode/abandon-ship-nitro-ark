@@ -662,11 +662,20 @@ export function offchainBalance(): Promise<OffchainBalanceResult> {
 }
 
 /**
- * Returns the loaded wallet's network, mailbox ID and VTXO extended public key.
+ * Returns the loaded wallet's network, mailbox ID and exact native SDK source.
  * Uses local wallet data; rejects if no wallet is loaded.
  */
 export function debugInfo(): Promise<WalletDebugInfo> {
   return NitroArkHybridObject.debugInfo();
+}
+
+/**
+ * Returns canonical public V4/V1 acknowledgments for an existing native key.
+ * Does not allocate a key, generate a signature, or expose private material.
+ * Independent proof verification and financial readiness remain required.
+ */
+export function perKeyProof(index: number): Promise<string> {
+  return NitroArkHybridObject.perKeyProof(index);
 }
 
 /**

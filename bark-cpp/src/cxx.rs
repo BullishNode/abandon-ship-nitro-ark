@@ -240,7 +240,7 @@ pub(crate) mod ffi {
     pub struct WalletDebugInfo {
         network: String,
         mailbox_id: String,
-        vtxo_xpub: String,
+        sdk_source: String,
     }
 
     #[derive(Clone, Copy)]
@@ -452,6 +452,7 @@ pub(crate) mod ffi {
         ) -> Result<WalletSnapshotInfo>;
         fn get_ark_info() -> Result<CxxArkInfo>;
         fn debug_info() -> Result<WalletDebugInfo>;
+        fn per_key_proof(index: u32) -> Result<String>;
         fn offchain_balance() -> Result<OffchainBalance>;
         fn derive_store_next_keypair() -> Result<KeyPairResult>;
         fn peek_keypair(index: u32) -> Result<KeyPairResult>;
@@ -740,8 +741,14 @@ pub(crate) fn debug_info() -> anyhow::Result<ffi::WalletDebugInfo> {
         Ok(ffi::WalletDebugInfo {
             network: info.network.to_string(),
             mailbox_id: info.mailbox_id.to_string(),
-            vtxo_xpub: info.vtxo_xpub.to_string(),
+            sdk_source: env!("BARK_WALLET_SOURCE").to_owned(),
         })
+    })
+}
+
+pub(crate) fn per_key_proof(index: u32) -> anyhow::Result<String> {
+    ffi_boundary("per_key_proof", || {
+        crate::TOKIO_RUNTIME.block_on(crate::per_key_proof(index))
     })
 }
 

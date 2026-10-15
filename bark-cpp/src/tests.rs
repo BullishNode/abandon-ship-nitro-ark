@@ -38,6 +38,24 @@ fn bark_version_matches_resolved_build_metadata() {
 }
 
 #[test]
+fn c_sdk_source_identity_is_an_exact_owned_revision() {
+    let source = env!("BARK_WALLET_SOURCE");
+    let (repository, revision) = source.rsplit_once('#').unwrap();
+    assert!(repository.starts_with("git+https://github.com/BullishNode/abandon-ship-bark.git?rev="));
+    assert_eq!(revision.len(), 40);
+    assert!(revision.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b)));
+    assert!(repository.ends_with(revision));
+}
+
+#[test]
+fn per_key_proof_rejects_hardened_indices_before_opening_a_wallet() {
+    for index in [1u32 << 31, u32::MAX] {
+        let error = crate::TOKIO_RUNTIME.block_on(crate::per_key_proof(index)).unwrap_err();
+        assert!(error.to_string().contains("non-hardened"));
+    }
+}
+
+#[test]
 fn lightning_send_options_preserve_defaults_zero_and_wait() {
     for wait in [false, true] {
         for seconds in [None, Some(0), Some(30), Some(u32::MAX)] {

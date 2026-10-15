@@ -75,7 +75,7 @@ export interface BarkArkInfo {
 export interface WalletDebugInfo {
   network: string;
   mailbox_id: string;
-  vtxo_xpub: string; // Base58 extended public key for VTXO derivation
+  sdk_source: string; // Exact resolved native SDK Git source, not just its version
 }
 
 // Helper interface for sendManyOnchain
@@ -450,6 +450,7 @@ export interface NitroArk extends HybridObject<{ ios: 'c++'; android: 'c++' }> {
   // --- Wallet Info ---
   getArkInfo(): Promise<BarkArkInfo>;
   debugInfo(): Promise<WalletDebugInfo>;
+  perKeyProof(index: number): Promise<string>;
   offchainBalance(): Promise<OffchainBalanceResult>;
   deriveStoreNextKeypair(): Promise<KeyPairResult>;
   peekKeyPair(index: number): Promise<KeyPairResult>;

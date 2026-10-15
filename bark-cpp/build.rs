@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-fn resolved_bark_wallet_version() -> String {
+fn resolved_bark_wallet_metadata() -> (String, String) {
     let lockfile_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("Cargo.lock");
     let lockfile = std::fs::read_to_string(&lockfile_path)
         .unwrap_or_else(|error| panic!("failed to read {}: {error}", lockfile_path.display()));
@@ -21,11 +21,21 @@ fn resolved_bark_wallet_version() -> String {
         "expected exactly one resolved bark-wallet package in Cargo.lock"
     );
 
-    bark_packages[0]
+    let version = bark_packages[0]
         .get("version")
         .and_then(toml::Value::as_str)
         .expect("resolved bark-wallet package is missing its version")
-        .to_owned()
+        .to_owned();
+    let source = bark_packages[0]
+        .get("source")
+        .and_then(toml::Value::as_str)
+        .expect("resolved bark-wallet package is missing its exact Git source");
+    let (_, revision) = source.rsplit_once('#')
+        .expect("resolved bark-wallet Git source is missing its revision");
+    assert!(source.starts_with("git+") && revision.len() == 40
+        && revision.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b)),
+        "resolved bark-wallet source must identify an exact Git commit");
+    (version, source.to_owned())
 }
 
 fn main() {
@@ -33,10 +43,9 @@ fn main() {
     println!("cargo:rerun-if-changed=src/lib.rs");
     println!("cargo:rerun-if-changed=src/cxx.rs");
     println!("cargo:rerun-if-changed=Cargo.lock");
-    println!(
-        "cargo:rustc-env=BARK_WALLET_VERSION={}",
-        resolved_bark_wallet_version()
-    );
+    let (version, source) = resolved_bark_wallet_metadata();
+    println!("cargo:rustc-env=BARK_WALLET_VERSION={version}");
+    println!("cargo:rustc-env=BARK_WALLET_SOURCE={source}");
 
     cxx_build::bridge("src/cxx.rs")
         .flag_if_supported("-std=c++17")

@@ -482,6 +482,40 @@ pub async fn debug_info() -> anyhow::Result<bark::DebugInfo> {
         .await
 }
 
+/// Export retained public acknowledgments without allocating keys or signing.
+/// The observed server is context; the portable V4/V1 signing domains stay intact.
+pub async fn per_key_proof(index: u32) -> anyhow::Result<String> {
+    anyhow::ensure!(index < (1 << 31), "per-key index must be non-hardened");
+    let manager = GLOBAL_WALLET_MANAGER.lock().await;
+    manager.with_context_ref_async(|ctx| async move {
+        let network = ctx.wallet.network().await?;
+        let key = ctx.wallet.peek_keypair(index).await?.public_key();
+        let record = ctx.wallet.fallback_destination().await?;
+        let mailbox = ctx.wallet.mailbox_identifier().as_pubkey();
+        record.verify(network, mailbox)?;
+        let link = ctx.wallet.fallback_key_link(key).await?;
+        link.verify(network, mailbox, &record)?;
+        anyhow::ensure!(link.user_pubkey == key, "retained link belongs to another key");
+        let server = ctx.wallet.require_ark_info().await?;
+        anyhow::ensure!(server.network == network, "native server network differs");
+        Ok(serde_json::to_string(&serde_json::json!({
+            "schema_version": 1,
+            "network": network.to_string(),
+            "server_pubkey": server.server_pubkey.to_string(),
+            "native_index": index,
+            "user_pubkey": key.to_string(),
+            "mailbox_pk": mailbox.to_string(),
+            "spk": hex::encode(record.spk.as_bytes()),
+            "fallback_record": hex::encode(record.serialize()),
+            "key_link_attestation": hex::encode(link.serialize()),
+            "recovery_index": link.recovery_index,
+            "record_version": 4,
+            "key_link_version": 1,
+            "sdk_source": env!("BARK_WALLET_SOURCE")
+        }))?)
+    }).await
+}
+
 pub async fn derive_store_next_keypair() -> anyhow::Result<Keypair> {
     let mut manager = GLOBAL_WALLET_MANAGER.lock().await;
     manager

@@ -986,8 +986,22 @@ public:
         WalletDebugInfo info;
         info.network = std::string(rust_info.network.data(), rust_info.network.length());
         info.mailbox_id = std::string(rust_info.mailbox_id.data(), rust_info.mailbox_id.length());
-        info.vtxo_xpub = std::string(rust_info.vtxo_xpub.data(), rust_info.vtxo_xpub.length());
+        info.sdk_source = std::string(rust_info.sdk_source.data(), rust_info.sdk_source.length());
         return info;
+      } catch (const rust::Error& e) {
+        throw std::runtime_error(e.what());
+      }
+    });
+  }
+
+  std::shared_ptr<Promise<std::string>> perKeyProof(double index) override {
+    return Promise<std::string>::async([index]() {
+      if (!std::isfinite(index) || index < 0 || std::floor(index) != index || index >= 2147483648.0) {
+        throw std::invalid_argument("Per-key index must be a non-hardened integer");
+      }
+      try {
+        auto proof = bark_cxx::per_key_proof(static_cast<uint32_t>(index));
+        return std::string(proof.data(), proof.length());
       } catch (const rust::Error& e) {
         throw std::runtime_error(e.what());
       }
