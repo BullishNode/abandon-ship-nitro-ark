@@ -1039,9 +1039,9 @@ pub(crate) fn bolt11_invoice_with_description_hash(
 ) -> anyhow::Result<ffi::Bolt11Invoice> {
     ffi_boundary("bolt11_invoice_with_description_hash", || {
         let token = unsafe { token.as_ref().cloned() };
-        let invoice = crate::TOKIO_RUNTIME.block_on(crate::bolt11_invoice_with_description_hash(
-            amount_sat, description_hash, token,
-        ))?;
+        let invoice = crate::TOKIO_RUNTIME.block_on(
+            crate::bolt11_invoice_with_description_hash(amount_sat, description_hash, token),
+        )?;
         Ok(ffi::Bolt11Invoice {
             bolt11_invoice: invoice.to_string(),
             payment_secret: invoice.payment_secret().to_string(),

@@ -654,7 +654,9 @@ pub async fn bolt11_invoice_with_description_hash(
         .with_context_async(|ctx| async move {
             ctx.wallet
                 .bolt11_invoice_with_description_hash(
-                    Amount::from_sat(amount_sat), description_hash, token,
+                    Amount::from_sat(amount_sat),
+                    description_hash,
+                    token,
                 )
                 .await
                 .context("Failed to create hashed-description invoice")
