@@ -275,13 +275,18 @@ pub(crate) async fn try_create_wallet(
     );
 
     debug!("Loading or creating onchain wallet");
-    OnchainWallet::load_or_create(net, seed, db.clone())
-        .await
-        .context("failed to load or create onchain wallet")?;
+    let onchain: Arc<tokio::sync::RwLock<dyn bark::onchain::OnchainWalletTrait>> =
+        Arc::new(tokio::sync::RwLock::new(
+            OnchainWallet::load_or_create(net, seed, db.clone())
+                .await
+                .context("failed to load or create onchain wallet")?,
+        ));
     let lock_manager = Box::new(MemoryLockManager::new());
     debug!("Creating bark wallet with exit support");
     let wallet_seed = WalletSeed::new_from_mnemonic(net, &mnemonic);
-    match BarkWallet::create(net, &wallet_seed, &config, &*db, &*lock_manager, false)
+    match BarkWallet::create(
+        net, &wallet_seed, &config, &*db, &*lock_manager, false, &onchain, None,
+    )
         .await
         .context("error creating wallet")
     {
