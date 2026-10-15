@@ -3,6 +3,29 @@
 # Exit on error
 set -e
 
+# Resolve output paths inside this checkout, regardless of its directory name.
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+cd -- "$SCRIPT_DIR"
+
+# An explicit ABI selection bounds isolated builds; upstream defaults stay intact.
+ANDROID_ABIS="${NITRO_ANDROID_ABIS-arm64-v8a,armeabi-v7a,x86_64}"
+case "$ANDROID_ABIS" in
+    ""|,*|*,|*,,*) echo "Invalid Android ABI selection" >&2; exit 1 ;;
+esac
+IFS=, read -r -a SELECTED_ABIS <<< "$ANDROID_ABIS"
+SEEN_ABIS=","
+for ABI in "${SELECTED_ABIS[@]}"; do
+    case "$ABI" in
+        arm64-v8a|armeabi-v7a|x86_64) ;;
+        *) echo "Unsupported Android ABI: $ABI" >&2; exit 1 ;;
+    esac
+    case "$SEEN_ABIS" in
+        *",$ABI,"*) echo "Duplicate Android ABI: $ABI" >&2; exit 1 ;;
+    esac
+    SEEN_ABIS="$SEEN_ABIS$ABI,"
+done
+selected_abi() { [[ ",$ANDROID_ABIS," == *",$1,"* ]]; }
+
 # Unset any iOS/macOS specific variables that might interfere
 unset SDKROOT
 unset PLATFORM_NAME
@@ -84,9 +107,9 @@ CXX_BINARY_NAME="libcxxbridge1.a"
 rm -rf "$OUTPUT_DIR"
 
 # Create output directory structure
-mkdir -p "$OUTPUT_DIR/arm64-v8a"
-mkdir -p "$OUTPUT_DIR/armeabi-v7a"
-mkdir -p "$OUTPUT_DIR/x86_64"
+for ABI in "${SELECTED_ABIS[@]}"; do
+    mkdir -p "$OUTPUT_DIR/$ABI"
+done
 
 echo "Building for Android..."
 
@@ -124,6 +147,7 @@ export AS="$TOOLCHAIN_PATH/bin/llvm-as$HOST_EXE_SUFFIX"
 export NM="$TOOLCHAIN_PATH/bin/llvm-nm$HOST_EXE_SUFFIX"
 export STRIP="$TOOLCHAIN_PATH/bin/llvm-strip$HOST_EXE_SUFFIX"
 
+if selected_abi arm64-v8a; then
 # --- Build for ARM64 (aarch64-linux-android) ---
 echo "Building for arm64-v8a..."
 TARGET_ARCH_ARM64="aarch64-linux-android"
@@ -148,6 +172,9 @@ if [ -z "$ARM64_CXX_LIB_PATH" ]; then
 fi
 cp "$ARM64_CXX_LIB_PATH" "$OUTPUT_DIR/arm64-v8a/"
 
+fi
+
+if selected_abi armeabi-v7a; then
 # --- Build for ARMv7 (armv7-linux-androideabi) ---
 echo "Building for armeabi-v7a..."
 TARGET_ARCH_ARMV7="armv7-linux-androideabi"
@@ -172,6 +199,9 @@ if [ -z "$ARMV7_CXX_LIB_PATH" ]; then
 fi
 cp "$ARMV7_CXX_LIB_PATH" "$OUTPUT_DIR/armeabi-v7a/"
 
+fi
+
+if selected_abi x86_64; then
 # --- Build for x86_64 (x86_64-linux-android) ---
 echo "Building for x86_64..."
 TARGET_ARCH_X86_64="x86_64-linux-android"
@@ -196,25 +226,15 @@ if [ -z "$X86_64_CXX_LIB_PATH" ]; then
 fi
 cp "$X86_64_CXX_LIB_PATH" "$OUTPUT_DIR/x86_64/"
 
-# --- Copy binaries to React Native project ---
-DEST_JNI_DIR_ARM64="../../react-native-nitro-ark/react-native-nitro-ark/android/src/main/jniLibs/arm64-v8a"
-DEST_JNI_DIR_ARMV7="../../react-native-nitro-ark/react-native-nitro-ark/android/src/main/jniLibs/armeabi-v7a"
-DEST_JNI_DIR_X86_64="../../react-native-nitro-ark/react-native-nitro-ark/android/src/main/jniLibs/x86_64"
+fi
 
-mkdir -p "$DEST_JNI_DIR_ARM64"
-mkdir -p "$DEST_JNI_DIR_ARMV7"
-mkdir -p "$DEST_JNI_DIR_X86_64"
+# --- Copy selected binaries to this checkout's React Native package ---
+DEST_JNI_ROOT="$SCRIPT_DIR/../react-native-nitro-ark/android/src/main/jniLibs"
+for ABI in "${SELECTED_ABIS[@]}"; do
+    mkdir -p "$DEST_JNI_ROOT/$ABI"
+    echo "Copying $ABI binaries..."
+    cp -f "$OUTPUT_DIR/$ABI/$BINARY_NAME" "$DEST_JNI_ROOT/$ABI/"
+    cp -f "$OUTPUT_DIR/$ABI/$CXX_BINARY_NAME" "$DEST_JNI_ROOT/$ABI/"
+done
 
-echo "Copying arm64-v8a binary..."
-cp -f "$OUTPUT_DIR/arm64-v8a/$BINARY_NAME" "$DEST_JNI_DIR_ARM64/"
-cp -f "$OUTPUT_DIR/arm64-v8a/$CXX_BINARY_NAME" "$DEST_JNI_DIR_ARM64/"
-
-echo "Copying armeabi-v7a binary..."
-cp -f "$OUTPUT_DIR/armeabi-v7a/$BINARY_NAME" "$DEST_JNI_DIR_ARMV7/"
-cp -f "$OUTPUT_DIR/armeabi-v7a/$CXX_BINARY_NAME" "$DEST_JNI_DIR_ARMV7/"
-
-echo "Copying x86_64 binary..."
-cp -f "$OUTPUT_DIR/x86_64/$BINARY_NAME" "$DEST_JNI_DIR_X86_64/"
-cp -f "$OUTPUT_DIR/x86_64/$CXX_BINARY_NAME" "$DEST_JNI_DIR_X86_64/"
-
-echo "Android build complete!"
+echo "Android build complete for: $ANDROID_ABIS"
