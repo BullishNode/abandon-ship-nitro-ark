@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bark-wallet = { git = "https://github.com/BullishNode/abandon-ship-bark.git", rev = "1997fc4762cf2851da1eeba7b8b34f93c526563d", features = [
+bark-wallet = { git = "https://github.com/BullishNode/abandon-ship-bark.git", rev = "ca568d5a28aa16a2a4fbb853531d869ad22a9724", features = [
   "native",
   "tls-webpki-roots",
   "onchain-bdk",
@@ -12,7 +12,7 @@ bark-wallet = { git = "https://github.com/BullishNode/abandon-ship-bark.git", re
   "sqlite",
 ], default-features = false }
 
-bark-bitcoin-ext = { git = "https://github.com/BullishNode/abandon-ship-bark.git", rev = "1997fc4762cf2851da1eeba7b8b34f93c526563d", default-features = false }
+bark-bitcoin-ext = { git = "https://github.com/BullishNode/abandon-ship-bark.git", rev = "ca568d5a28aa16a2a4fbb853531d869ad22a9724", default-features = false }
 bdk_wallet = { version = "3.1.0" }
 bdk_bitcoind_rpc = { version = "0.22.0" }
 chrono = { version = "0.4", features = ["serde"] }
