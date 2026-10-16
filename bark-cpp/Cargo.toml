@@ -3,8 +3,11 @@ name = "bark-cpp"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+owned-noah-signet = []
+
 [dependencies]
-bark-wallet = { git = "https://github.com/BullishNode/abandon-ship-bark.git", rev = "e2291996ac2713227fd25ead508abe800373f012", features = [
+bark-wallet = { git = "https://github.com/BullishNode/abandon-ship-bark.git", rev = "9c77ff2b541fc696f9ca4aef49c358476d6039f0", features = [
   "native",
   "tls-webpki-roots",
   "onchain-bdk",
@@ -12,7 +15,7 @@ bark-wallet = { git = "https://github.com/BullishNode/abandon-ship-bark.git", re
   "sqlite",
 ], default-features = false }
 
-bark-bitcoin-ext = { git = "https://github.com/BullishNode/abandon-ship-bark.git", rev = "e2291996ac2713227fd25ead508abe800373f012", default-features = false }
+bark-bitcoin-ext = { git = "https://github.com/BullishNode/abandon-ship-bark.git", rev = "9c77ff2b541fc696f9ca4aef49c358476d6039f0", default-features = false }
 bdk_wallet = { version = "3.1.0" }
 bdk_bitcoind_rpc = { version = "0.22.0" }
 chrono = { version = "0.4", features = ["serde"] }
@@ -35,8 +38,13 @@ hex = "0.4.3"
 rusqlite = { version = "0.31.0", features = ["backup"] }
 sha2 = "0.10.9"
 tempfile = "3.23.0"
+url = "2.5.8"
 
 [build-dependencies]
+serde_json = "1.0.145"
+sha2 = "0.10.9"
+url = "2.5.8"
+tempfile = "3.23.0"
 cxx-build = "1.0.186"
 toml = "1.0"
 

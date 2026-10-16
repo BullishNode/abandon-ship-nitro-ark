@@ -654,7 +654,9 @@ pub async fn bolt11_invoice_with_description_hash(
         .with_context_async(|ctx| async move {
             ctx.wallet
                 .bolt11_invoice_with_description_hash(
-                    Amount::from_sat(amount_sat), description_hash, token,
+                    Amount::from_sat(amount_sat),
+                    description_hash,
+                    token,
                 )
                 .await
                 .context("Failed to create hashed-description invoice")
@@ -1052,6 +1054,15 @@ pub async fn pay_lightning_invoice_with_origin(
     origin: PaymentMethod,
     options: bark::LightningSendOptions,
 ) -> anyhow::Result<LightningPaymentResult> {
+    #[cfg(feature = "owned-noah-signet")]
+    if matches!(
+        &origin,
+        PaymentMethod::LightningAddress(_) | PaymentMethod::Lnurl(_)
+    ) {
+        bail!(
+            "The owned Noah payer requires native metadata discovery for address or LNURL origins"
+        );
+    }
     let mut manager = GLOBAL_WALLET_MANAGER.lock().await;
     manager
         .with_context_async(|ctx| async {
@@ -1131,6 +1142,21 @@ pub async fn pay_lightning_address(
             let lightning_address = LightningAddress::from_str(addr)
                 .with_context(|| format!("Invalid Lightning Address format: '{}'", addr))?;
 
+            #[cfg(feature = "owned-noah-signet")]
+            let options = {
+                if ctx.wallet.network().await? != Network::Signet {
+                    bail!("The compiled owned Noah payer requires signet");
+                }
+                let destination = lightning_address.lnurlp_url();
+                let destination = url::Url::parse(&destination)?;
+                if destination.host_str() != Some(env!("NITRO_OWNED_NOAH_DOMAIN")) {
+                    bail!("The compiled owned Noah payer refuses a foreign domain");
+                }
+                options.require_lnurl_metadata(true).lnurl_root_ca_pem(
+                    include_bytes!(concat!(env!("OUT_DIR"), "/owned-noah-ca.pem")).to_vec(),
+                )
+            };
+
             let invoice = ctx
                 .wallet
                 .pay_lightning_address_with(&lightning_address, amount, comment, options)
@@ -1203,3 +1229,7 @@ pub async fn mailbox_authorization(
     let mut manager = GLOBAL_WALLET_MANAGER.lock().await;
     manager.with_context(|ctx| Ok(ctx.wallet.mailbox_authorization(authorization_expiry)))
 }
+
+#[cfg(test)]
+#[path = "../owned_noah_profile.rs"]
+mod owned_noah_build_profile_controls;

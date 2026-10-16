@@ -1,3 +1,5 @@
+mod owned_noah_profile;
+
 use std::path::PathBuf;
 
 fn resolved_bark_wallet_version() -> String {
@@ -29,6 +31,39 @@ fn resolved_bark_wallet_version() -> String {
 }
 
 fn main() {
+    for name in [
+        "NOAH_ARK_PROFILE",
+        "NOAH_A_ROUTING_MANIFEST",
+        "NOAH_A_ROUTING_SHA256",
+        "NOAH_A_CA_FILE",
+        "NOAH_A_CA_SHA256",
+        "NOAH_ARK_NITRO_COMMIT",
+    ] {
+        println!("cargo:rerun-if-env-changed={name}");
+    }
+    println!("cargo:rerun-if-changed=owned_noah_profile.rs");
+    if std::env::var("NOAH_ARK_PROFILE").ok().as_deref() == Some("track-a-two-step-per-key")
+        && std::env::var_os("CARGO_FEATURE_OWNED_NOAH_SIGNET").is_none()
+    {
+        panic!("The owned Noah build profile requires its explicit native feature");
+    }
+    if std::env::var_os("CARGO_FEATURE_OWNED_NOAH_SIGNET").is_some() {
+        let profile = owned_noah_profile::from_environment().unwrap_or_else(|_| {
+            panic!("Invalid or missing hash-pinned owned Noah signet build inputs")
+        });
+        let out = PathBuf::from(std::env::var_os("OUT_DIR").expect("OUT_DIR"));
+        std::fs::write(out.join("owned-noah-ca.pem"), profile.ca_pem)
+            .expect("write public qualification CA");
+        println!("cargo:rustc-env=NITRO_OWNED_NOAH_DOMAIN={}", profile.domain);
+        println!(
+            "cargo:rustc-env=NITRO_OWNED_NOAH_ROUTING_SHA256={}",
+            profile.routing_sha256
+        );
+        println!(
+            "cargo:rustc-env=NITRO_OWNED_NOAH_CA_SHA256={}",
+            profile.ca_sha256
+        );
+    }
     // Tell cargo to invalidate the built crate whenever the wrapper changes
     println!("cargo:rerun-if-changed=src/lib.rs");
     println!("cargo:rerun-if-changed=src/cxx.rs");

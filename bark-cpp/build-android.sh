@@ -74,9 +74,17 @@ fi
 # Directory for generated headers consumed by RN project
 DEST_HEADER_DIR="../react-native-nitro-ark/cpp/generated"
 
+# Only the explicit owned profile compiles its declared CA and destination.
+OWNED_FEATURES=()
+case "${NOAH_ARK_PROFILE-}" in
+    ""|stock) ;;
+    track-a-two-step-per-key) OWNED_FEATURES=(--features owned-noah-signet) ;;
+    *) echo "Unknown owned Noah native build profile" >&2; exit 1 ;;
+esac
+
 # Always refresh host-generated headers before cross-compiling
 echo "Building host target to refresh FFI headers..."
-cargo build --locked $CARGO_FLAG --lib
+cargo build --locked "${OWNED_FEATURES[@]}" $CARGO_FLAG --lib
 HOST_BUILD_DIR="target/$BUILD_TYPE/build"
 
 # cxx maintains stable top-level header paths for the latest host build.
@@ -163,7 +171,7 @@ export OPENSSL_INCLUDE_DIR="$PWD/target/$TARGET_ARCH_ARM64/$BUILD_TYPE/build/ope
 export OPENSSL_LIB_DIR="$PWD/target/$TARGET_ARCH_ARM64/$BUILD_TYPE/build/openssl-sys-*/out/lib"
 
 rustup target add $TARGET_ARCH_ARM64
-cargo build --locked --target=$TARGET_ARCH_ARM64 $CARGO_FLAG --lib
+cargo build --locked "${OWNED_FEATURES[@]}" --target=$TARGET_ARCH_ARM64 $CARGO_FLAG --lib
 cp "$TARGET_DIR_ARM64/$BINARY_NAME" "$OUTPUT_DIR/arm64-v8a/"
 ARM64_CXX_LIB_PATH=$(find "$TARGET_DIR_ARM64/build" -name "$CXX_BINARY_NAME" | head -n 1)
 if [ -z "$ARM64_CXX_LIB_PATH" ]; then
@@ -190,7 +198,7 @@ export OPENSSL_INCLUDE_DIR="$PWD/target/$TARGET_ARCH_ARMV7/$BUILD_TYPE/build/ope
 export OPENSSL_LIB_DIR="$PWD/target/$TARGET_ARCH_ARMV7/$BUILD_TYPE/build/openssl-sys-*/out/lib"
 
 rustup target add $TARGET_ARCH_ARMV7
-cargo build --locked --target=$TARGET_ARCH_ARMV7 $CARGO_FLAG --lib
+cargo build --locked "${OWNED_FEATURES[@]}" --target=$TARGET_ARCH_ARMV7 $CARGO_FLAG --lib
 cp "$TARGET_DIR_ARMV7/$BINARY_NAME" "$OUTPUT_DIR/armeabi-v7a/"
 ARMV7_CXX_LIB_PATH=$(find "$TARGET_DIR_ARMV7/build" -name "$CXX_BINARY_NAME" | head -n 1)
 if [ -z "$ARMV7_CXX_LIB_PATH" ]; then
@@ -217,7 +225,7 @@ export OPENSSL_INCLUDE_DIR="$PWD/target/$TARGET_ARCH_X86_64/$BUILD_TYPE/build/op
 export OPENSSL_LIB_DIR="$PWD/target/$TARGET_ARCH_X86_64/$BUILD_TYPE/build/openssl-sys-*/out/lib"
 
 rustup target add $TARGET_ARCH_X86_64
-cargo build --locked --target=$TARGET_ARCH_X86_64 $CARGO_FLAG --lib
+cargo build --locked "${OWNED_FEATURES[@]}" --target=$TARGET_ARCH_X86_64 $CARGO_FLAG --lib
 cp "$TARGET_DIR_X86_64/$BINARY_NAME" "$OUTPUT_DIR/x86_64/"
 X86_64_CXX_LIB_PATH=$(find "$TARGET_DIR_X86_64/build" -name "$CXX_BINARY_NAME" | head -n 1)
 if [ -z "$X86_64_CXX_LIB_PATH" ]; then
